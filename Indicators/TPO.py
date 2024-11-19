@@ -39,6 +39,9 @@ class TPO:
 
         # Sort by TPO count descending
         tpo_df.sort_values(by='TPO', ascending=False, inplace=True)
+
+        # Select only the top 30 levels
+        tpo_df = tpo_df.head(30)
         tpo_df.reset_index(drop=True, inplace=True)
 
         return tpo_df
