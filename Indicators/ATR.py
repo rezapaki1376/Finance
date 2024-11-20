@@ -21,7 +21,7 @@ class ATR:
         df['TrueRange'] = df[['High-Low', 'High-Close', 'Low-Close']].max(axis=1)
 
         # Initialize ATR column
-        df[f'ATR_{ATR_period}'] = 0.0
+        df[f'ATR{ATR_period}'] = 0.0
 
         # Compute ATR dynamically for the first `ATR_period` rows
         for i in range(len(df)):

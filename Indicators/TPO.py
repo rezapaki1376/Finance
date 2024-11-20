@@ -2,17 +2,16 @@ import pandas as pd
 import numpy as np
 
 class TPO:
-    def __init__(self ):
-        
+    def __init__(self):
         pass
 
-    def calculate_TPO(self, df, NOfCandles, step=0.0001):
-        """Calculate TPO using a sliding window over the DataFrame."""
+    def calculate_TPO(self, df, NOfCandles, step=0.01):
+        """Calculate TPO using a sliding window and return a single DataFrame."""
         if len(df) < NOfCandles:
             raise ValueError("Not enough candles in the DataFrame to calculate TPO.")
-        
+
         # Prepare a list to store results
-        results = []
+        all_results = []
 
         # Iterate over each candle with a sliding window
         for i in range(NOfCandles, len(df)):
@@ -41,13 +40,13 @@ class TPO:
             sorted_tpo = sorted(tpo_counts.items(), key=lambda x: x[1], reverse=True)
 
             # Select only the top 30 levels
-            top_tpo = sorted_tpo[:30]
+            top_tpo = sorted_tpo[:5]
 
-            # Convert to a DataFrame for this sliding window
-            tpo_df = pd.DataFrame(top_tpo, columns=['Price', 'TPO'])
-            tpo_df['Time'] = current_time
+            # Add the results to a single DataFrame
+            for price, tpo in top_tpo:
+                all_results.append({'Time': current_time, 'Price': price, 'TPO': tpo})
 
-            # Append the results for this time step
-            results.append(tpo_df)
+        # Convert the results to a single DataFrame
+        result_df = pd.DataFrame(all_results)
 
-        return results
+        return result_df
