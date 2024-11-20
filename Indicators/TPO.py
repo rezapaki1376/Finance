@@ -2,46 +2,52 @@ import pandas as pd
 import numpy as np
 
 class TPO:
-    def __init__(self, step=0.01):
-        self.step = step  # Step size for price levels (e.g., 0.01 for granular bins)
+    def __init__(self ):
+        
+        pass
 
-    def calculate_TPO(self, df, NOfCandles):
-        """Calculate TPO for the last N candles and associate it with the current candle's time."""
-        # Get the last N candles
-        df_last_n = df.iloc[-NOfCandles:]
+    def calculate_TPO(self, df, NOfCandles, step=0.0001):
+        """Calculate TPO using a sliding window over the DataFrame."""
+        if len(df) < NOfCandles:
+            raise ValueError("Not enough candles in the DataFrame to calculate TPO.")
+        
+        # Prepare a list to store results
+        results = []
 
-        # Determine the time of the current (most recent) candle
-        current_time = df_last_n.iloc[-1]['time']
+        # Iterate over each candle with a sliding window
+        for i in range(NOfCandles, len(df)):
+            # Select the last NOfCandles before the current candle
+            df_window = df.iloc[i - NOfCandles:i]
 
-        # Determine price bins (min to max of high/low in the last N candles)
-        min_price = df_last_n['ask_l'].min()
-        max_price = df_last_n['ask_h'].max()
+            # Determine the time of the current candle
+            current_time = df.iloc[i]['time']
 
-        # Generate bins
-        price_bins = np.arange(min_price, max_price + self.step, self.step)
-        tpo_counts = {price: 0 for price in price_bins}
+            # Determine price bins (min to max of high/low in the last N candles)
+            min_price = df_window['ask_l'].min()
+            max_price = df_window['ask_h'].max()
+            price_bins = np.arange(min_price, max_price + step, step)
 
-        # Count TPO occurrences for each bin
-        for _, row in df_last_n.iterrows():
-            low, high = row['ask_l'], row['ask_h']
-            for price in price_bins:
-                if low <= price <= high:
-                    tpo_counts[price] += 1
+            # Initialize TPO counts for price bins
+            tpo_counts = {price: 0 for price in price_bins}
 
-        # Convert to a DataFrame
-        tpo_df = pd.DataFrame({
-            'Price': list(tpo_counts.keys()),
-            'TPO': list(tpo_counts.values())
-        })
+            # Count TPO occurrences for each bin
+            for _, row in df_window.iterrows():
+                low, high = row['ask_l'], row['ask_h']
+                for price in price_bins:
+                    if low <= price <= high:
+                        tpo_counts[price] += 1
 
-        # Add the time of the current candle
-        tpo_df['Time'] = current_time
+            # Sort TPO counts by value
+            sorted_tpo = sorted(tpo_counts.items(), key=lambda x: x[1], reverse=True)
 
-        # Sort by TPO count descending
-        tpo_df.sort_values(by='TPO', ascending=False, inplace=True)
+            # Select only the top 30 levels
+            top_tpo = sorted_tpo[:30]
 
-        # Select only the top 30 levels
-        tpo_df = tpo_df.head(30)
-        tpo_df.reset_index(drop=True, inplace=True)
+            # Convert to a DataFrame for this sliding window
+            tpo_df = pd.DataFrame(top_tpo, columns=['Price', 'TPO'])
+            tpo_df['Time'] = current_time
 
-        return tpo_df
+            # Append the results for this time step
+            results.append(tpo_df)
+
+        return results
